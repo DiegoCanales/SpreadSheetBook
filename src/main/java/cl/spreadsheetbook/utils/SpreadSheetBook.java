@@ -1,17 +1,33 @@
-package cl.dcnls.utils;
+package cl.spreadsheetbook.utils;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Picture;
+import org.apache.poi.ss.usermodel.Shape;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.WorkbookUtil;
+import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFShape;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -49,10 +65,17 @@ public class SpreadSheetBook {
 			if(file.length() == 0){
 				workbook = new XSSFWorkbook(); //Crea un nuevo workbook
 			} else {
-				workbook = (XSSFWorkbook) WorkbookFactory.create(file);
+				try {
+					workbook = (XSSFWorkbook) WorkbookFactory.create(file);
+				} catch (EncryptedDocumentException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidFormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			return workbook;
-		} catch (InvalidFormatException e) { e.printStackTrace();
 		} catch (FileNotFoundException e) {e.printStackTrace();
 		} catch (IOException e) { e.printStackTrace();
 		}
@@ -353,4 +376,97 @@ public class SpreadSheetBook {
 		return (Integer) null;
 	}
 	
+	public void addFontStyle(int rowIndex, int columnIndex, Font font) {
+		XSSFCell cell = getCell(rowIndex,columnIndex);
+		XSSFFont cellFont = createFont(font);
+		CellStyle cellStyle = workbook.createCellStyle();
+		cellStyle.setFont(cellFont);
+		cell.setCellStyle(cellStyle);
+		save();
+	}
+	
+	private XSSFFont createFont(Font font) {
+		XSSFFont cellFont = workbook.createFont();
+		font.toXSSFFont(cellFont);
+		return cellFont;
+	}
+	
+	/**
+	 * getCell: Obtiene la celda, la crea si no existe
+	 * @param rowIndex
+	 * @param columnIndex
+	 * @return
+	 */
+	private XSSFCell getCell(int rowIndex, int columnIndex) {
+		XSSFRow row = sheet.getRow(rowIndex);
+		if(row == null)
+			row = sheet.createRow(rowIndex);
+		XSSFCell cell = row.getCell(columnIndex);
+		if(cell == null)
+			cell = row.createCell(columnIndex);
+		return cell;
+	}
+	
+	
+	public void insertImage(int rowIndex, int columnIndex, String imagePath) {
+		InputStream inputStream = null;
+		try {
+			inputStream = new FileInputStream(imagePath);
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		//Get the contents of an InputStream as a byte[].
+		byte[] bytes = null;
+		try {
+			bytes = IOUtils.toByteArray(inputStream);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//Adds a picture to the workbook
+		int pictureIdx = workbook.addPicture(bytes, Workbook.PICTURE_TYPE_JPEG);
+		//close the input stream
+		try {
+			inputStream.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		//Returns an object that handles instantiating concrete classes
+		CreationHelper helper = workbook.getCreationHelper();
+
+		//Creates the top-level drawing patriarch.
+		Drawing<XSSFShape> drawing = sheet.createDrawingPatriarch();
+
+		//Create an anchor that is attached to the worksheet
+		ClientAnchor anchor = helper.createClientAnchor();
+		//set top-left corner for the image
+		anchor.setCol1(rowIndex);
+		anchor.setRow1(columnIndex);
+		
+
+		//Creates a picture
+		Picture pict = drawing.createPicture(anchor, pictureIdx);
+		//Reset the image to the original size
+		pict.resize();
+		
+		
+		save();
+	}
+	
+	/**
+	 * setBorderStyle: define un estilo de borde para la casilla. 
+	 * nota: define borde solo si la casilla tiene valores
+	 * @param rowIndex
+	 * @param columnIndex
+	 * @param border
+	 */
+	public void setBorderStyle(int rowIndex, int columnIndex, Border border) {
+		XSSFCell cell = getCell(rowIndex, columnIndex);
+		CellStyle style = cell.getCellStyle();
+		border.addBorderStyle(style);
+		save();
+	}
 }
