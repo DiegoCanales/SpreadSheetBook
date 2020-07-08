@@ -17,11 +17,13 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Picture;
 import org.apache.poi.ss.usermodel.Shape;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -381,7 +383,9 @@ public class SpreadSheetBook {
 		XSSFFont cellFont = createFont(font);
 		CellStyle cellStyle = workbook.createCellStyle();
 		cellStyle.setFont(cellFont);
+		font.toCellStyle(cellStyle);
 		cell.setCellStyle(cellStyle);
+		
 		save();
 	}
 	
@@ -467,6 +471,11 @@ public class SpreadSheetBook {
 		XSSFCell cell = getCell(rowIndex, columnIndex);
 		CellStyle style = cell.getCellStyle();
 		border.addBorderStyle(style);
+		save();
+	}
+	
+	public void mergeCells(int firstRow, int lastRow, int firstCol, int lastCol) {
+		sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
 		save();
 	}
 }
