@@ -461,21 +461,27 @@ public class SpreadSheetBook {
 	}
 	
 	/**
-	 * setBorderStyle: define un estilo de borde para la casilla. 
+	 * setCellStyle: define un estilo de borde para la casilla. 
 	 * nota: define borde solo si la casilla tiene valores
 	 * @param rowIndex
 	 * @param columnIndex
-	 * @param border
+	 * @param c
 	 */
-	public void setBorderStyle(int rowIndex, int columnIndex, Border border) {
+	public void setCellStyle(int rowIndex, int columnIndex, Cell c) {
 		XSSFCell cell = getCell(rowIndex, columnIndex);
 		CellStyle style = cell.getCellStyle();
-		border.addBorderStyle(style);
+		c.addCellStyle(style);
 		save();
 	}
 	
 	public void mergeCells(int firstRow, int lastRow, int firstCol, int lastCol) {
-		sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+		try {
+			sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+		}catch (Exception e) {
+			System.out.println("SpreadSheetBook.mergeCells()");
+			System.err.println("Se intenta combinar, rango de celdas ya combinadas");
+			e.printStackTrace();
+		}
 		save();
 	}
 }
